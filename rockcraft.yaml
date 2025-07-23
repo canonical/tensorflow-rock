@@ -1,6 +1,7 @@
+# Based on the Layers of the upstream Image: https://hub.docker.com/layers/tensorflow/tensorflow/2.5.1/images/sha256-07d837eced57184599f50944a47e10a23584dae666dc93aa9a762b1111651fa7
 name: tensorflow
 base: ubuntu@24.04
-version: '2.5.1'
+version: "2.5.1"
 license: Apache-2.0
 summary: Tensorflow CPU rock
 description: |
