@@ -1,0 +1,62 @@
+# Based on the Layers of the upstream Image: https://hub.docker.com/layers/tensorflow/tensorflow/2.5.1/images/sha256-07d837eced57184599f50944a47e10a23584dae666dc93aa9a762b1111651fa7
+name: tensorflow
+base: ubuntu@24.04
+version: "2.5.1"
+license: Apache-2.0
+summary: Tensorflow CPU rock
+description: |
+    This rock is used as part of the Charmed Kubeflow product, specifically in Tensorboard
+    Controller. It contains the Tensorflow package.
+platforms:
+    amd64:
+run-user: _daemon_
+
+services:
+  tensorflow:
+    override: replace
+    summary: "Tensorflow service"
+    startup: enabled
+    command: "/usr/local/bin/tensorboard [ ]"
+entrypoint-service: tensorflow
+
+# Add Deadsnakes ppa package repo to install python3.9 interpreter
+package-repositories:
+  - type: apt
+    ppa: deadsnakes/ppa
+    priority: always
+
+parts:
+  security-team-requirement:
+    plugin: nil
+    override-build: |
+      mkdir -p ${CRAFT_PART_INSTALL}/usr/share/rocks
+      (echo "# os-release" && cat /etc/os-release && echo "# dpkg-query" && \
+      dpkg-query -f '${db:Status-Abbrev},${binary:Package},${Version},${source:Package},${Source:Version}\n' -W) \
+      > ${CRAFT_PART_INSTALL}/usr/share/rocks/dpkg.query
+
+  python:
+    plugin: python
+    source: .
+    build-packages:
+    # Use Python3.9 as it's the latest version compatible with tensorflow 2.5.1
+    # Ref: https://www.tensorflow.org/install/source#cpu
+      - python3.9
+      - python3.9-venv
+    build-environment: 
+    - PARTS_PYTHON_INTERPRETER: python3.9
+    stage-packages:
+      - python3.9
+      - python3.9-venv
+    python-requirements:
+      - requirements.txt
+
+  sym-link-tensorboard:
+    plugin: nil
+    after: [python]
+    override-prime: |
+      craftctl default
+      # Create a symlink from `/usr/local/bin/tensorboard` as the command is hardcoded
+      # in tensorboard controller
+      # Ref: https://github.com/kubeflow/kubeflow/blob/v1.10.0/components/tensorboard-controller/controllers/tensorboard_controller.go#L280
+      mkdir -p $CRAFT_PRIME/usr/local/bin
+      ln -sf /usr/bin/tensorboard $CRAFT_PRIME/usr/local/bin/tensorboard
