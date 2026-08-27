@@ -1,0 +1,6 @@
+integrations:
+  - consumer-repository: https://github.com/canonical/kubeflow-tensorboards-operator.git
+
+    replace-image:
+      - file: charms/tensorboard-controller/config.yaml
+        path: options.tensorboard-image.default
